@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>X 粉丝标签 DOM 测试</title>
+<link rel="stylesheet" href="../content.css">
+<script src="fixture-storage.js"></script>
+<script src="../format.js"></script><script src="../content.js"></script>
+<body><main>
+<div data-testid="UserCell" id="alice"><a href="/Alice"><div>昵称A <span>✓</span></div></a><a href="/Alice">@Alice</a><p>简介提及 <a href="/Other">@Other</a></p><button>关注</button></div>
+<div data-testid="UserCell" id="zero"><a href="/Zero"><div>零粉丝账号</div></a><a href="/Zero">@Zero</a></div>
+<div data-testid="UserCell" id="unknown"><a href="/Unknown"><div>未知数量</div></a><a href="/Unknown">@Unknown</a></div>
+<article data-testid="tweet" id="tweet">
+  <div data-testid="User-Name" id="tweet-author">
+    <a href="/TweetAuthor/with_replies"><div>首页推文作者 <span>✓</span><span data-xfc-badge data-xfc-user="oldauthor" class="xfc-badge">粉丝 999</span></div></a>
+    <a href="/TweetAuthor">@TweetAuthor</a><a href="/TweetAuthor/status/123"><time>1小时</time></a>
+  </div>
+  <div data-testid="tweetText">主体内容提及 <a href="/Other">@Other</a></div>
+  <div role="link" aria-label="引用推文">
+    <div data-testid="User-Name" id="quoted-author">
+      <a href="/QuotedAuthor"><div>引用推文作者</div></a><a href="/QuotedAuthor">@QuotedAuthor</a>
+      <a href="/QuotedAuthor/status/456"><time>2小时</time></a>
+    </div>
+    <div>引用内容</div>
+  </div>
+</article>
+<article data-testid="tweet" id="detail-tweet">
+  <div data-testid="User-Name" id="tweet-header">
+    <a href="/HeaderAuthor" aria-hidden="true"><span></span></a>
+    <a href="/HeaderAuthor/verified_followers"><div>评论页主贴作者</div></a>
+    <a href="/HeaderAuthor/status/789"><time></time></a>
+  </div>
+  <div>无 @handle 的评论页主贴标题</div>
+</article>
+<article data-testid="tweet">
+  <div data-testid="User-Name" id="tweet-unknown"><a href="/NoCount"><div>尚未读到粉丝数的推文作者</div></a><a href="/NoCount">@NoCount</a></div>
+</article>
+</main></body></html>
