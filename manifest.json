@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "X 粉丝数量",
+  "version": "1.0.2",
+  "description": "在 X 首页推文、评论作者和粉丝、关注等用户列表的昵称旁显示粉丝数量。",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage"],
+  "action": {"default_title": "X 粉丝数量", "default_popup": "popup.html"},
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*", "https://www.x.com/*", "https://www.twitter.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*", "https://www.x.com/*", "https://www.twitter.com/*"],
+      "js": ["format.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    }
+  ]
+}

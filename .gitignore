@@ -1,0 +1,16 @@
+# 真实登录页面截图和本地验证记录
+validation/
+
+# 发布压缩包和系统文件
+*.zip
+.DS_Store
+
+# 本地依赖、环境变量和敏感配置
+node_modules/
+.env
+.env.*
+*.local
+*.local.*
+config.local.*
+secrets/
+credentials.*
