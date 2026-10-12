@@ -198,3 +198,25 @@ test('handshake reports bridge installation and empty JSON responses are counted
   assert.equal(h.messages.length, 0); h.request();
   assert.deepEqual(h.status(), [{ source: 'x-follower-count', type: 'BRIDGE_STATUS', records: 0, responses: 1 }]);
 });
+
+test('mutual relationship booleans survive nested legacy records and partial updates', async () => {
+  let body = { core: { screen_name: 'Mutual' }, relationship_counts: { followers: 35000 },
+    relationship_perspectives: { following: true, followed_by: true },
+    legacy: { screen_name: 'Mutual', followers_count: 35000 } };
+  const h = harness(async () => response(body));
+  await h.window.fetch('/api'); await h.flush();
+  assert.deepEqual(h.records(), [{screenName:'Mutual',followersCount:35000,following:true,followedBy:true}]);
+  body = { legacy: { screen_name: 'Mutual', followers_count: 35001 } };
+  await h.window.fetch('/api'); await h.flush();
+  assert.deepEqual(h.records().at(-1), {screenName:'Mutual',followersCount:35001,following:true,followedBy:true});
+  body = { legacy: { screen_name: 'Mutual', followers_count: 35001, following: false, followed_by: true } };
+  await h.window.fetch('/api'); await h.flush();
+  assert.equal(h.records().at(-1).following, false);
+});
+
+test('relationship strings and follower counts do not imply mutual following', async () => {
+  const h = harness(async () => response({screen_name:'Unknown',followers_count:10000,
+    following:'true',followed_by:1}));
+  await h.window.fetch('/api'); await h.flush();
+  assert.deepEqual(h.records(), [{screenName:'Unknown',followersCount:10000}]);
+});
