@@ -55,7 +55,12 @@
     const followersCount = value.followers_count ?? legacy?.followers_count ?? value.relationship_counts?.followers;
     if (typeof screenName !== 'string' || !/^[a-zA-Z0-9_]{1,15}$/.test(screenName) ||
         !Number.isSafeInteger(followersCount) || followersCount < 0) return null;
-    return { screenName, followersCount };
+    const record = { screenName, followersCount };
+    for (const key of ['following', 'followed_by']) {
+      const relation = value.relationship_perspectives?.[key] ?? value[key] ?? legacy?.[key];
+      if (typeof relation === 'boolean') record[key === 'followed_by' ? 'followedBy' : key] = relation;
+    }
+    return record;
   }
 
   function enqueue(root) {
@@ -86,7 +91,10 @@
         seen.add(value);
         let record;
         try { record = recordFrom(value); } catch (_) { continue; }
-        if (record) records.set(record.screenName.toLowerCase(), record);
+        if (record) {
+          const key = record.screenName.toLowerCase();
+          records.set(key, { ...records.get(key), ...record });
+        }
         if (depth >= MAX_DEPTH) continue;
         // Bound the pending stack too, even for exceptionally wide responses.
         const keys = Object.keys(value);
@@ -103,11 +111,12 @@
       const values = Array.from(records.values());
       for (const record of values) {
         const key = record.screenName.toLowerCase();
+        const previous = cache.get(key);
         cache.delete(key);
-        cache.set(key, record);
+        cache.set(key, { ...previous, ...record });
         if (cache.size > MAX_RECORDS) cache.delete(cache.keys().next().value);
       }
-      publish(values);
+      publish(values.map(record => cache.get(record.screenName.toLowerCase())));
       setTimeout(next, 0);
     }
     step();

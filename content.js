@@ -2,7 +2,7 @@
   "use strict";
   const source = "x-follower-count";
   const selector = '[data-testid="UserCell"], [data-testid="User-Name"]';
-  const badgeSelector = '[data-xfc-badge]';
+  const badgeSelector = '[data-xfc-badge], [data-xfc-tag]';
   const counts = new Map();
   let settings = { enabled: true, mode: "compact" };
   let pending = false;
@@ -31,16 +31,17 @@
       const nameLink = name && links.find(link => profileName(link) === name &&
         link !== handleLink && link.getAttribute("aria-hidden") !== "true" && link.textContent.trim());
       const target = nameLink && (nameLink.firstElementChild || nameLink);
-      const count = name ? counts.get(name) : undefined;
+      const record = name ? counts.get(name) : undefined;
+      const count = record?.followersCount;
       const ownedBadges = [...cell.querySelectorAll(badgeSelector)].filter(b => b.closest(selector) === cell);
-      let badge = ownedBadges[0];
+      let badge = ownedBadges.find(b => b.hasAttribute('data-xfc-badge'));
       if (!settings.enabled || !target || count === undefined) {
-        badge?.remove();
+        for (const owned of ownedBadges) owned.remove();
         continue;
       }
       // React 会回收列表节点；每次从当前行账号重新匹配，禁止沿用旧标签。
       for (const duplicate of ownedBadges) {
-        if (duplicate !== badge) duplicate.remove();
+        if (duplicate.hasAttribute('data-xfc-badge') && duplicate !== badge) duplicate.remove();
       }
       if (badge && badge.parentElement !== target) { badge.remove(); badge = null; }
       if (!badge) {
@@ -56,7 +57,29 @@
       if (badge.dataset.xfcUser !== name) badge.dataset.xfcUser = name;
       const label = `粉丝数量：${count.toLocaleString("zh-CN")}`;
       if (badge.getAttribute("aria-label") !== label) badge.setAttribute("aria-label", label);
+      syncTag(cell, target, name, 'mutual', record.following === true && record.followedBy === true,
+        '互关', `@${name} · 你与对方相互关注（来自 X 本次页面数据）`);
+      syncTag(cell, target, name, 'big-v', count >= 50000,
+        '大V', `@${name} · 粉丝不少于 5 万（插件标记，不代表 X 官方认证）`);
     }
+  }
+
+  function syncTag(cell, target, name, kind, visible, text, title) {
+    const tags = [...cell.querySelectorAll(`[data-xfc-tag="${kind}"]`)].filter(tag => tag.closest(selector) === cell);
+    let tag = tags.shift();
+    for (const duplicate of tags) duplicate.remove();
+    if (!visible || (tag && tag.parentElement !== target)) { tag?.remove(); tag = null; }
+    if (!visible) return;
+    if (!tag) {
+      tag = document.createElement('span');
+      tag.dataset.xfcTag = kind;
+      tag.className = `xfc-badge xfc-${kind}`;
+      target.appendChild(tag);
+    }
+    if (tag.textContent !== text) tag.textContent = text;
+    if (tag.title !== title) tag.title = title;
+    if (tag.dataset.xfcUser !== name) tag.dataset.xfcUser = name;
+    if (tag.getAttribute('aria-label') !== text) tag.setAttribute('aria-label', text);
   }
 
   function schedule() {
@@ -79,8 +102,13 @@
           !/^[A-Za-z0-9_]{1,15}$/.test(record.screenName) ||
           !Number.isSafeInteger(record.followersCount) || record.followersCount < 0) continue;
       const name = record.screenName.toLowerCase();
+      const previous = counts.get(name);
+      const next = { ...previous, followersCount: record.followersCount };
+      for (const key of ['following', 'followedBy']) {
+        if (typeof record[key] === 'boolean') next[key] = record[key];
+      }
       counts.delete(name);
-      counts.set(name, record.followersCount);
+      counts.set(name, next);
       if (counts.size > 2000) counts.delete(counts.keys().next().value);
     }
     schedule();
@@ -109,7 +137,7 @@
         records: counts.size, rows: document.querySelectorAll(selector).length,
         userRows: document.querySelectorAll('[data-testid="UserCell"]').length,
         authors: document.querySelectorAll('[data-testid="User-Name"]').length,
-        badges: document.querySelectorAll(badgeSelector).length });
+        badges: document.querySelectorAll("[data-xfc-badge]").length });
     });
   }
   window.postMessage({ source, type: "REQUEST_COUNTS" }, location.origin);
